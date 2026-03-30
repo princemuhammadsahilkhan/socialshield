@@ -1,5 +1,36 @@
 let warningBanner = null;
 let lastAnalyzedText = "";
+let autoScanTimeout = null;
+
+function extractPageText() {
+  const selectors = [
+    "main", "article", ".email-body", "#message-body",
+    "[role='main']", ".content", "body"
+  ];
+  
+  for (const sel of selectors) {
+    const el = document.querySelector(sel);
+    if (el) {
+      const text = el.innerText || el.textContent || "";
+      if (text.length > 100) return text.trim();
+    }
+  }
+  return document.body.innerText || "";
+}
+
+function autoScan() {
+  const text = extractPageText();
+  if (!text || text.length < 100) return;
+  if (text === lastAnalyzedText) return;
+  lastAnalyzedText = text;
+
+  chrome.runtime.sendMessage({ type: "ANALYZE_TEXT", text }, (response) => {
+    if (!response || response.error) return;
+    if (response.analysis && response.analysis.risk_level !== "SAFE") {
+      injectWarningBanner(response.analysis);
+    }
+  });
+}
 
 function extractPageText() {
   const selectors = [
@@ -135,3 +166,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 });
+
+// Auto-scan page after it fully loads — wait 2 seconds for dynamic content
+if (document.readyState === "complete") {
+  autoScanTimeout = setTimeout(autoScan, 2000);
+} else {
+  window.addEventListener("load", () => {
+    autoScanTimeout = setTimeout(autoScan, 2000);
+  });
+}
