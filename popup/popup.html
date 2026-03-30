@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SocialShield</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#060810;--bg2:#0a0d16;--bg3:#0f1420;--bg4:#141b2d;
+      --glow:#ff2d55;--cyan:#00f5ff;--green:#00ff88;--yellow:#ffe500;
+      --text:#e8eaf0;--muted:#4a5568;--dim:#2d3748;--border:#1a2035;
+      --font-hud:'Orbitron',monospace;--font-mono:'JetBrains Mono',monospace;
+    }
+    body { width:400px;min-height:560px;background:var(--bg);color:var(--text);font-family:var(--font-mono);font-size:11px;overflow-x:hidden;position:relative; }
+    body::before { content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,245,255,0.015) 2px,rgba(0,245,255,0.015) 4px);pointer-events:none;z-index:1000; }
+    .header { padding:14px 16px 12px;border-bottom:1px solid #ff2d5530;position:relative;background:linear-gradient(135deg,#060810 0%,#0d0815 100%);overflow:hidden; }
+    .header::after { content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#ff2d55,#ff6b35,transparent); }
+    .header-grid { display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px; }
+    .shield-icon { width:36px;height:36px;display:flex;align-items:center;justify-content:center; }
+    .shield-icon svg { width:36px;height:36px;filter:drop-shadow(0 0 8px #ff2d55); }
+    .title-main { font-family:var(--font-hud);font-size:16px;font-weight:900;color:var(--text);letter-spacing:0.12em;text-shadow:0 0 20px #ff2d5566; }
+    .title-sub { font-size:9px;color:var(--glow);letter-spacing:0.2em;margin-top:3px; }
+    .status-cluster { display:flex;flex-direction:column;align-items:flex-end;gap:4px; }
+    .status-dot { display:flex;align-items:center;gap:5px;font-size:8px;letter-spacing:0.08em;color:var(--muted); }
+    .dot { width:6px;height:6px;border-radius:50%;animation:pulse 2s ease-in-out infinite; }
+    .dot.red { background:var(--glow);box-shadow:0 0 6px var(--glow); }
+    .dot.green { background:var(--green);box-shadow:0 0 6px var(--green);animation-delay:0.5s; }
+    .dot.cyan { background:var(--cyan);box-shadow:0 0 6px var(--cyan);animation-delay:1s; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+    .devil-bar { display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:linear-gradient(90deg,#1a0510,#0a0d16);border-bottom:1px solid #ff2d5520; }
+    .devil-label span { font-family:var(--font-hud);font-size:10px;font-weight:700;letter-spacing:0.15em;color:var(--glow);text-shadow:0 0 10px #ff2d5588; }
+    .devil-desc { font-size:9px;color:var(--muted);margin-top:2px; }
+    .toggle-wrap { display:flex;align-items:center;gap:8px; }
+    .toggle-switch { position:relative;width:44px;height:22px; }
+    .toggle-switch input { opacity:0;width:0;height:0;position:absolute; }
+    .toggle-track { position:absolute;inset:0;background:var(--bg4);border:1px solid var(--dim);border-radius:11px;cursor:pointer;transition:all 0.3s; }
+    .toggle-track::after { content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;background:var(--muted);border-radius:50%;transition:all 0.3s; }
+    .toggle-switch input:checked + .toggle-track { background:#1a0510;border-color:var(--glow);box-shadow:0 0 12px #ff2d5544; }
+    .toggle-switch input:checked + .toggle-track::after { transform:translateX(22px);background:var(--glow);box-shadow:0 0 8px var(--glow); }
+    .toggle-status { font-family:var(--font-hud);font-size:9px;font-weight:700;letter-spacing:0.1em;color:var(--muted);min-width:28px; }
+    .toggle-status.on { color:var(--glow);text-shadow:0 0 8px #ff2d5588; }
+    .tabs { display:flex;background:var(--bg2);border-bottom:1px solid var(--border); }
+    .tab { flex:1;padding:9px 4px;text-align:center;cursor:pointer;font-family:var(--font-hud);font-size:8px;font-weight:700;letter-spacing:0.12em;color:var(--muted);border:none;background:transparent;border-bottom:2px solid transparent;transition:all 0.2s; }
+    .tab.active { color:var(--cyan);border-bottom-color:var(--cyan);background:#00f5ff08; }
+    .tab:hover:not(.active) { color:var(--text);background:#ffffff05; }
+    .panel { display:none; }
+    .panel.active { display:block; }
+    .stats-bar { display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border); }
+    .stat { padding:10px 12px;border-right:1px solid var(--border);text-align:center; }
+    .stat:last-child { border-right:none; }
+    .stat-num { font-family:var(--font-hud);font-size:18px;font-weight:900;line-height:1;margin-bottom:3px; }
+    .stat-num.red { color:var(--glow);text-shadow:0 0 12px #ff2d5566; }
+    .stat-num.cyan { color:var(--cyan);text-shadow:0 0 12px #00f5ff44; }
+    .stat-num.green { color:var(--green);text-shadow:0 0 12px #00ff8844; }
+    .stat-label { font-size:8px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase; }
+    .scan-section { padding:12px 14px; }
+    .input-label { font-size:9px;letter-spacing:0.15em;color:var(--muted);margin-bottom:6px;text-transform:uppercase; }
+    textarea { width:100%;height:100px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:11px;padding:10px;resize:none;outline:none;transition:border-color 0.2s,box-shadow 0.2s;line-height:1.6;margin-bottom:10px; }
+    textarea:focus { border-color:var(--cyan);box-shadow:0 0 0 1px #00f5ff22,inset 0 0 20px #00f5ff05; }
+    textarea::placeholder { color:var(--dim); }
+    .btn-row { display:flex;gap:8px;margin-bottom:12px; }
+    .btn { flex:1;padding:10px 8px;border-radius:4px;border:1px solid;cursor:pointer;font-family:var(--font-hud);font-size:9px;font-weight:700;letter-spacing:0.1em;transition:all 0.2s; }
+    .btn-analyze { background:linear-gradient(135deg,#1a0510,#0d0510);border-color:var(--glow);color:var(--glow);box-shadow:0 0 12px #ff2d5522; }
+    .btn-analyze:hover { box-shadow:0 0 20px #ff2d5544;transform:translateY(-1px); }
+    .btn-scan { background:linear-gradient(135deg,#001a1a,#000d0d);border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 12px #00f5ff22; }
+    .btn-scan:hover { box-shadow:0 0 20px #00f5ff44;transform:translateY(-1px); }
+    .btn:disabled { opacity:0.4;cursor:not-allowed;transform:none !important;box-shadow:none !important; }
+    .result-wrap { padding:0 14px 14px; }
+    .result-card { border-radius:6px;border:1px solid;overflow:hidden;animation:glitchIn 0.3s ease; }
+    @keyframes glitchIn { 0%{opacity:0;transform:translateY(4px) skewX(-1deg)}60%{transform:translateY(-1px) skewX(0.5deg)}100%{opacity:1;transform:none} }
+    .result-header { padding:10px 12px;display:flex;align-items:center;gap:10px; }
+    .risk-label { font-family:var(--font-hud);font-size:11px;font-weight:900;letter-spacing:0.15em; }
+    .score-track { flex:1;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden; }
+    .score-fill { height:100%;border-radius:2px;transition:width 1s cubic-bezier(0.16,1,0.3,1); }
+    .score-val { font-family:var(--font-hud);font-size:10px;min-width:40px;text-align:right; }
+    .result-body { padding:0 12px 12px; }
+    .summary-text { font-size:11px;color:#94a3b8;line-height:1.7;padding:10px;background:var(--bg3);border-radius:4px;margin-bottom:10px; }
+    .section-title { font-size:9px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px; }
+    .section-title::after { content:'';flex:1;height:1px;background:var(--border); }
+    .tactic-chip { padding:7px 10px;border-radius:3px;border-left:2px solid;margin-bottom:6px;background:var(--bg3); }
+    .tactic-name { font-family:var(--font-hud);font-size:9px;font-weight:700;letter-spacing:0.1em;margin-bottom:3px; }
+    .tactic-evidence { font-size:10px;color:var(--muted);font-style:italic;margin-bottom:2px; }
+    .tactic-why { font-size:10px;color:#718096;line-height:1.5; }
+    .recommend { margin-top:10px;padding:10px;border-radius:4px;border:1px solid;font-size:11px;line-height:1.6; }
+    .recommend-title { font-family:var(--font-hud);font-size:8px;letter-spacing:0.15em;margin-bottom:5px; }
+    .devil-action { margin-top:10px;padding:10px 12px;background:#1a0508;border:1px solid #ff2d5540;border-radius:4px; }
+    .devil-action-title { font-family:var(--font-hud);font-size:9px;color:var(--glow);letter-spacing:0.15em;margin-bottom:8px; }
+    .devil-action-item { display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:10px;color:#a0aec0;line-height:1.5; }
+    .devil-bullet { color:var(--glow);font-weight:bold;flex-shrink:0;margin-top:1px; }
+    .intel-section { padding:12px 14px; }
+    .intel-empty { text-align:center;padding:30px 20px;color:var(--muted); }
+    .intel-empty .big { font-size:28px;margin-bottom:8px; }
+    .intel-empty p { font-size:11px;line-height:1.6; }
+    .threat-card { background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:8px;position:relative;overflow:hidden;animation:fadeUp 0.3s ease; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none} }
+    .threat-card::before { content:'';position:absolute;left:0;top:0;bottom:0;width:2px; }
+    .threat-card.CRITICAL::before { background:var(--glow);box-shadow:0 0 8px var(--glow); }
+    .threat-card.HIGH::before { background:#ff6b35; }
+    .threat-card.MEDIUM::before { background:var(--yellow); }
+    .threat-url { font-size:10px;color:var(--cyan);margin-bottom:4px;word-break:break-all; }
+    .threat-meta { display:flex;gap:10px;flex-wrap:wrap; }
+    .threat-meta-item { font-size:9px;color:var(--muted);display:flex;align-items:center;gap:3px; }
+    .threat-meta-item span { color:var(--text); }
+    .poison-badge { display:inline-flex;align-items:center;gap:4px;padding:2px 7px;background:#1a0508;border:1px solid #ff2d5540;border-radius:3px;font-size:8px;font-family:var(--font-hud);color:var(--glow);letter-spacing:0.1em;margin-top:6px; }
+    .clear-btn { width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-family:var(--font-hud);font-size:9px;letter-spacing:0.1em;cursor:pointer;margin-top:4px;transition:all 0.2s; }
+    .clear-btn:hover { border-color:var(--glow);color:var(--glow); }
+    .settings-section { padding:14px; }
+    .s-label { font-size:9px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:6px; }
+    .input-wrap { position:relative;margin-bottom:8px; }
+    input[type="password"],input[type="text"] { width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:11px;padding:9px 36px 9px 10px;outline:none;transition:all 0.2s; }
+    input:focus { border-color:var(--cyan);box-shadow:0 0 0 1px #00f5ff22; }
+    .eye-btn { position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px; }
+    .hint { font-size:10px;color:var(--dim);line-height:1.6;margin-bottom:12px; }
+    .hint a { color:var(--cyan);text-decoration:none; }
+    .save-btn { width:100%;padding:10px;background:linear-gradient(135deg,#001a1a,#000d0d);border:1px solid var(--cyan);border-radius:4px;color:var(--cyan);font-family:var(--font-hud);font-size:10px;font-weight:700;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;box-shadow:0 0 12px #00f5ff22; }
+    .save-btn:hover { box-shadow:0 0 20px #00f5ff44;transform:translateY(-1px); }
+    .toast { margin-top:8px;padding:8px 12px;background:#001a10;border:1px solid #00ff8844;border-radius:4px;color:var(--green);font-size:10px;text-align:center;display:none; }
+    .toast.show { display:block;animation:fadeUp 0.2s ease; }
+    .divider { height:1px;background:var(--border);margin:14px 0; }
+    .loading { text-align:center;padding:24px 20px; }
+    .loading-ring { width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--glow);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .loading-text { color:var(--muted);font-size:10px;letter-spacing:0.1em; }
+    .loading-sub { color:var(--dim);font-size:9px;margin-top:4px; }
+    .error-box { padding:10px 12px;background:#1a0505;border:1px solid #ff444422;border-radius:4px;color:#fc8181;font-size:11px;line-height:1.6; }
+    .safe-box { padding:16px;background:#001a0a;border:1px solid #00ff8822;border-radius:4px;text-align:center; }
+    .safe-box .safe-icon { font-size:24px;margin-bottom:6px; }
+    .safe-box .safe-title { color:var(--green);font-family:var(--font-hud);font-size:12px;font-weight:700;margin-bottom:3px; }
+    .safe-box .safe-sub { color:#48bb78;font-size:10px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-grid">
+      <div class="shield-icon">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 2L4 8V18C4 25.7 10.2 32.9 18 34C25.8 32.9 32 25.7 32 18V8L18 2Z" fill="#1a0510" stroke="#ff2d55" stroke-width="1.5"/>
+          <text x="18" y="23" text-anchor="middle" font-size="14" font-weight="bold" fill="#ff2d55" font-family="monospace">☠</text>
+        </svg>
+      </div>
+      <div>
+        <div class="title-main">SOCIALSHIELD</div>
+        <div class="title-sub">Social Engineering Defense System</div>
+      </div>
+      <div class="status-cluster">
+        <div class="status-dot"><div class="dot red"></div>THREATS</div>
+        <div class="status-dot"><div class="dot green"></div>ENGINE</div>
+        <div class="status-dot"><div class="dot cyan"></div><span id="keyStatus">NO KEY</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="devil-bar">
+    <div>
+      <div class="devil-label"><span>☠ DEVIL MODE</span></div>
+      <div class="devil-desc">Poison forms · Fingerprint attackers</div>
+    </div>
+    <div class="toggle-wrap">
+      <label class="toggle-switch">
+        <input type="checkbox" id="devilToggle">
+        <div class="toggle-track"></div>
+      </label>
+      <div class="toggle-status" id="devilStatus">OFF</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-scan">◈ SCAN</button>
+    <button class="tab" id="tab-intel">⬡ INTEL</button>
+    <button class="tab" id="tab-settings">⚙ CONFIG</button>
+  </div>
+
+  <div class="panel active" id="panel-scan">
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-num red" id="statThreats">0</div><div class="stat-label">Threats</div></div>
+      <div class="stat"><div class="stat-num cyan" id="statPoison">0</div><div class="stat-label">Poisoned</div></div>
+      <div class="stat"><div class="stat-num green" id="statScans">0</div><div class="stat-label">Scans</div></div>
+    </div>
+    <div class="scan-section">
+      <div class="input-label">// paste suspicious text or scan active page</div>
+      <textarea id="scanInput" placeholder="Paste email, message, or any suspicious text...&#10;&#10;Ctrl+Enter to analyze."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-analyze" id="analyzeBtn">▶ ANALYZE</button>
+        <button class="btn btn-scan" id="scanPageBtn">⟳ SCAN PAGE</button>
+      </div>
+    </div>
+    <div class="result-wrap" id="resultArea"></div>
+  </div>
+
+  <div class="panel" id="panel-intel">
+    <div class="intel-section" id="intelContent">
+      <div class="intel-empty">
+        <div class="big">⬡</div>
+        <p>No threat intelligence yet.<br>Scan pages to build your intel feed.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-settings">
+    <div class="settings-section">
+      <div class="s-label">Groq API Key</div>
+      <div class="input-wrap">
+        <input type="password" id="apiKeyInput" placeholder="gsk_...">
+        <button class="eye-btn" id="toggleEyeBtn">👁</button>
+      </div>
+      <div class="hint">Free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a><br>Model: llama-3.3-70b-versatile</div>
+      <button class="save-btn" id="saveKeyBtn">SAVE KEY</button>
+      <div class="toast" id="savedToast">✓ Key saved — system online</div>
+      <div class="divider"></div>
+      <div class="s-label">Devil Mode</div>
+      <div style="color:#4a5568;font-size:10px;line-height:1.8;">
+        <div style="margin-bottom:6px;">☠ <span style="color:#ff2d55">POISON</span> — Auto-fills phishing forms with fake data. Wastes attacker resources.</div>
+        <div>⬡ <span style="color:#00f5ff">FINGERPRINT</span> — Extracts attacker infrastructure. Logged to Intel feed.</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
